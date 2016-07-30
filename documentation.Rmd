@@ -17,6 +17,9 @@ include_graphics("logos.pdf")
 
 This application is based on [RStudio's Shiny](http://shiny.rstudio.com) and [Google Maps API](https://developers.google.com/maps/).
 
+* To access the app: <https://jijou.shinyapps.io/my_shiny_app/>
+* Github repository: <https://github.com/jbreitfelder/Jijou-s-app>
+
 #### How to use this app?
 
 1. Enter the kind of place you are looking for.
@@ -76,7 +79,7 @@ geoCode <- function(address) {
 ```
 
 ```{r}
-geoCode("Johns Hopking University")
+geoCode("Johns Hopkins University")
 ```
 
 #### Finding places of interest with Google Maps API
@@ -161,10 +164,10 @@ close_places <- function(location, radius, place){
 }
 ```
 
-Let's see an example of how it works :
+This code has been simplified for clarity, but the complete version is available on my [GitHub repository](https://github.com/jbreitfelder/Jijou-s-app). Let's see an example of how it works :
 
 ```{r}
-results <- close_places("Johns Hopking University", 1000, "school")
+results <- close_places("Johns Hopkins University", 1000, "school")
 kable(head(results, 5))
 ```
 
@@ -174,8 +177,8 @@ We can now visualise the result with the `ggmap` library :
 
 ```{r, message=FALSE, warning=FALSE}
 
-coord <- data.frame(lon=as.numeric(geoCode("Johns Hopking University")[2]),
-           lat=as.numeric(geoCode("Johns Hopking University")[1]))
+coord <- data.frame(lon=as.numeric(geoCode("Johns Hopkins University")[2]),
+           lat=as.numeric(geoCode("Johns Hopkins University")[1]))
 
 ggmap(get_map(c(coord$lon, coord$lat), zoom=14)) +
         geom_point(data=results, aes(x=as.numeric(long), 
@@ -229,7 +232,7 @@ circle_data <- make_circles(c(coord$lon, coord$lat), 1000, npoints=100)
 *****
 ## General structure of the shiny application
 
-The scripts are only in a simplified version here. The whole code canbe found in my GitHub repository :
+The scripts are only in a simplified version here. The entire codes can be found in my [GitHub repository](https://github.com/jbreitfelder/Jijou-s-app)
 
 
 #### ui.R 
