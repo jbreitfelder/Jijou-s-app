@@ -1,6 +1,5 @@
 ## README
 
-*****
 ### About the application :
 #### What is Jijou's app?
 
@@ -43,7 +42,7 @@ Damien, **France**
 * *Súper chévere y facil de usar! Aunque no encontré la pizzeria al lado de mi casa..* 
 Juan, **Brazil**  
 
-*****
+***
 ### About this repository :
 
 - **documentation.Rmd** and **documentation.html**: more details about the application
