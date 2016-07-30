@@ -8,7 +8,8 @@ output: html_document
 *****
 ## Introduction
 
-Jijou's app allows you to find interesting places around you. Looking for a good pizzeria, an aquarium, or the closest dentist? This app is for you! :) 
+Jijou's app allows you to find interesting places around you.  
+Looking for a good pizzeria, an aquarium, or the closest dentist? This app is for you! :) 
   
 ```{r, out.width=200, echo=FALSE, message=FALSE, warning=FALSE}
 library(knitr)
@@ -17,8 +18,10 @@ include_graphics("logos.pdf")
 
 This application is based on [RStudio's Shiny](http://shiny.rstudio.com) and [Google Maps API](https://developers.google.com/maps/).
 
-* To access the app: <https://jijou.shinyapps.io/my_shiny_app/>
-* Github repository: <https://github.com/jbreitfelder/Jijou-s-app>
+#### Links
+
+To access the app: <https://jijou.shinyapps.io/Jijou-s-app/>  
+Github repository: <https://github.com/jbreitfelder/Jijou-s-app>
 
 #### How to use this app?
 
