@@ -1,0 +1,314 @@
+---
+title: "Jijou's App documentation"
+author: "Joanne Breitfelder"
+date: "29 Jul 2016"
+output: html_document
+---
+
+*****
+## Introduction
+
+Jijou's app allows you to find interesting places around you. Looking for a good pizzeria, an aquarium, or the closest dentist? This app is for you! :) 
+  
+```{r, out.width=200, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+include_graphics("logos.pdf")
+```  
+
+This application is based on [RStudio's Shiny](http://shiny.rstudio.com) and [Google Maps API](https://developers.google.com/maps/).
+
+#### How to use this app?
+
+1. Enter the kind of place you are looking for.
+2. Enter your location
+3. Choose the radius in which you want to look for (only the 20 closest results will be desplayed)
+4. Adjust the map zoom: from 3 (continent) to 21 (building).
+5. Actualize and enjoy :)  
+
+#### Our users around the world speak about us!
+
+* *En tant qu'utilisateurs on est conquis!*
+Mélanie, **France**
+
+* *On aime beaucoup le design, le retour à la simplicité!*
+Damien, **France**
+
+* *Súper chévere y facil de usar! Aunque no encontré la pizzeria al lado de mi casa..* 
+Juan, **Brazil**  
+
+
+*****
+## How does it work?
+
+#### Geocoding with Google Maps API
+
+The application is based on 2 functions using Google Maps API. The first one, `geoCode()`, allows to find the GPS coordinates of a given place, and I found it [here](https://gist.github.com/josecarlosgonz/6417633). Let's see an example of what it does :
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(shiny)
+library(RCurl)
+library(jsonlite)
+library(plyr)
+library(ggmap)
+library(curl)
+
+url <- function(address, return.call="json", sensor="false") {
+        root <- "http://maps.google.com/maps/api/geocode/"
+        u <- paste(root, return.call, "?address=", 
+                   address, "&sensor=", sensor, sep="")
+        return(URLencode(u))
+}
+
+geoCode <- function(address) {
+        u <- url(address)
+        doc <- getURL(u)
+        x <- fromJSON(doc, simplifyVector=FALSE)
+        if(x$status=="OK") {
+                lat <- x$results[[1]]$geometry$location$lat
+                lng <- x$results[[1]]$geometry$location$lng
+                location_type <- x$results[[1]]$geometry$location_type
+                formatted_address <- x$results[[1]]$formatted_address
+                return(c(lat, lng, location_type, formatted_address))
+        } else {
+                return(c(NA, NA, NA, NA))
+        }
+}
+```
+
+```{r}
+geoCode("Johns Hopking University")
+```
+
+#### Finding places of interest with Google Maps API
+
+The second function, `close_places()` returns the 20 closest places of interest around a given position. Here is an example of the general structure of the function:
+
+```{r, eval=FALSE}
+close_places <- function(location, radius, place){ 
+        
+        ## Coordinates of the location
+        coord <- geoCode(location)
+        coord <- paste(as.character(round(as.numeric(coord[1]), 5)), 
+                       as.character(round(as.numeric(coord[2]), 5)), sep=",")
+        
+        ## Creation of the URL
+        baseurl<-"https://maps.googleapis.com/maps/api/place/nearbysearch/json?"
+        google_key <- "YOUR-PERSONNAL-KEY"
+        newurl <- paste(baseurl,"location=", coord, "&radius=", radius,
+                        "&name=", place, "&key=", google_key, sep="")
+        
+        ## Results
+        final <- fromJSON(newurl, simplifyVector=TRUE)
+        final <- final$results
+
+        details <- data.frame(icon=final$icon, rating=final$rating,
+                              address=final$vicinity,
+                              open_now=final$opening_hours$open_now, 
+                              name=final$name,
+                              idx=1:length(final$geometry$location$lat),
+                              lat=final$geometry$location$lat,
+                              long=final$geometry$location$lng)
+        
+        return(details)
+}
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+close_places <- function(location, radius, place){ 
+        
+        ## Coordinates of the location
+        coord <- geoCode(location)
+        coord <- paste(as.character(round(as.numeric(coord[1]), 5)), 
+                       as.character(round(as.numeric(coord[2]), 5)), sep=",")
+        
+        ## Creation of the URL
+        baseurl<-"https://maps.googleapis.com/maps/api/place/nearbysearch/json?"
+        google_key <- "AIzaSyD-8mknrSyCYh0Feg5PgGmq8gFIh3GINJo"
+        newurl <- paste(baseurl,"location=", coord,
+                        "&radius=", radius,
+                        "&name=", place,
+                        "&key=", google_key, sep="")
+        
+        ## Results
+        final <- fromJSON(newurl, simplifyVector=TRUE)
+        final <- final$results
+        
+        if("opening_hours" %in% names(final)){
+                if("open_now" %in% names(final$opening_hours)){
+                        open_now <- ifelse(is.na(final$opening_hours$open_now), "No information",
+                                         ifelse(final$opening_hours$open_now==FALSE,
+                                                "Closed :(", "Open :)"))
+                }
+        } else {
+                open_now <- rep("No information", length(final$name))
+        }
+        
+        rating <- ifelse(is.na(final$rating), mean(final$rating, na.rm=TRUE),
+                         final$rating)
+        
+        icon <- paste("<img src='", final$icon, "' width='50'></img>", sep="")
+        
+        details <- data.frame(icon=icon,
+                              rating=rating,
+                              address=final$vicinity,
+                              open_now=open_now,
+                              name=final$name,
+                              idx=1:length(final$geometry$location$lat),
+                              lat=final$geometry$location$lat,
+                              long=final$geometry$location$lng)
+        
+        return(details)
+}
+```
+
+Let's see an example of how it works :
+
+```{r}
+results <- close_places("Johns Hopking University", 1000, "school")
+kable(head(results, 5))
+```
+
+#### Visualisation
+
+We can now visualise the result with the `ggmap` library : 
+
+```{r, message=FALSE, warning=FALSE}
+
+coord <- data.frame(lon=as.numeric(geoCode("Johns Hopking University")[2]),
+           lat=as.numeric(geoCode("Johns Hopking University")[1]))
+
+ggmap(get_map(c(coord$lon, coord$lat), zoom=14)) +
+        geom_point(data=results, aes(x=as.numeric(long), 
+                                  y=as.numeric(lat)), size=3, alpha=0.8) +
+        geom_point(data=coord, aes(x=lon, y=lat), color="orange", size=2) +
+        xlab("Longitude") + ylab("Latitude")
+```
+
+Let's add some options to make it look a bit more fancy! :)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+make_circles <- function(center=c(0, 0), radius=1, npoints=100){
+        meanLat <- center[2]
+        radiusLon <- radius/(40075000/360)/cos(meanLat/57.3) 
+        radiusLat <- radius/(40075000/360)
+        circleDF <- data.frame(ID=1:npoints)
+        angle <- seq(0, 2*pi, length.out=npoints)
+        
+        circleDF$lon <- center[1]+radiusLon*2*cos(angle)
+        circleDF$lat <- center[2]+radiusLat*2*sin(angle)
+        return(circleDF)
+}
+
+circle_data <- make_circles(c(coord$lon, coord$lat), 1000, npoints=100)
+
+                ggmap(get_map(c(coord$lon, coord$lat), zoom=14)) +
+                        geom_point(data=results, 
+                                   aes(x=as.numeric(long), 
+                                       y=as.numeric(lat),
+                                       size=rating),
+                                   color="black", stroke=0.5) +
+                        scale_size("Rating") +
+                        geom_point(data=results, 
+                                   aes(x=as.numeric(long), 
+                                       y=as.numeric(lat),
+                                       size=rating,
+                                       color=open_now), stroke=0.02) +
+                        scale_color_discrete("Can I go now?") +
+                        geom_polygon(data=circle_data, aes(x=lon, y=lat), 
+                                     fill="SteelBlue", alpha=0.15) +
+                        geom_text(data=results, 
+                                  aes(x=as.numeric(long), 
+                                      y=as.numeric(lat),
+                                      label=idx),
+                                  check_overlap=TRUE, size=5, vjust=-1.1) +
+                        xlab("Longitude") + ylab("Latitude") +
+                        guides(colour=guide_legend(override.aes=list(size=5)))
+```
+
+
+*****
+## General structure of the shiny application
+
+The scripts are only in a simplified version here. The whole code canbe found in my GitHub repository :
+
+
+#### ui.R 
+
+```{r, eval=FALSE}
+library(shiny)
+library(markdown)
+
+shinyUI(navbarPage("Welcome to Jijou's app! :)",
+                   
+        tabPanel("Map",
+                 fluidRow(
+                        column(3, wellPanel(
+                               h3("Choose your options:"),
+                               p("..."))),
+                        
+                        column(6, 
+                               h3("Result of your request:", align="center"),
+                               plotOutput("map")),
+
+                        column(3, wellPanel(
+                                h3("Why should you use this app?"),
+                                p("..."))))),
+        
+        tabPanel("Table",
+                 fluidRow(
+                         column(9, 
+                                h3("Result of your request:"),
+                                dataTableOutput("table")),
+                         
+                         column(3, wellPanel(
+                                 h3("Why should you use this app?"),
+                                 p("..."))))),
+        
+        tabPanel("Documentation",
+                 includeHTML("documentation.html"))
+))
+
+```
+
+
+#### server.R 
+
+```{r, eval=FALSE}
+library(shiny)
+library(ggmap)
+
+geoCode <- function(address){....}
+close_places <- function(location, radius, place){....}
+
+shinyServer(function(input, output) {
+        output$map <- renderPlot({
+                data <- close_places(input$location, 
+                                     input$radius, 
+                                     input$place)
+                
+                coord <- data.frame(lon=as.numeric(geoCode(input$location)[2]),
+                           lat=as.numeric(geoCode(input$location)[1]))
+
+                ggmap(get_map(c(coord$lon, coord$lat), zoom=input$zoom)) +
+                        geom_point(data=results, aes(x=as.numeric(long), 
+                                                     y=as.numeric(lat)),
+                                   size=3, alpha=0.8) +
+                        geom_point(data=coord, aes(x=lon, y=lat),
+                                   color="orange", size=2) +
+                        xlab("Longitude") +
+                        ylab("Latitude")
+        })
+        
+        output$table <- renderDataTable(close_places(input$location, 
+                                                     input$radius, 
+                                                     input$place)[, c(1, 6, 5, 3, 2, 4)], escape=FALSE)
+})
+```
+
+
+******
+## References
+
+D. Kahle and H. Wickham. *ggmap: Spatial Visualization with ggplot2*.  
+The R Journal, 5(1), **144-161**.  
+<http://journal.r-project.org/archive/2013-1/kahle-wickham.pdf>

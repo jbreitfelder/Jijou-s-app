@@ -1,0 +1,12 @@
+base
+shiny
+bitops
+RCurl
+jsonlite
+plyr
+ggplot2
+ggmap
+curl
+devtools
+slidify
+knitr
