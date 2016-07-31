@@ -53,19 +53,18 @@ close_places <- function(location, radius, place){
         
         ## Results
         final <- fromJSON(newurl, simplifyVector=TRUE)
-        final <- final$results
         
-        if(is.null(final$results)){
+        if(final$status=="ZERO_RESULTS"){
                 details <- data.frame(icon="No result, try a bigger radius",
                                       rating=0,
                                       address="No result, try a bigger radius",
                                       open_now="No result, try a bigger radius",
                                       name="No result, try a bigger radius",
                                       idx=1,
-                                      lat=geoCode(location)[1],
-                                      long=geoCode(location)[2])
+                                      lat=geoCode(location)[2],
+                                      long=geoCode(location)[1])
         } else {
-        
+                final <- final$results
                 if("opening_hours" %in% names(final)){
                         if("open_now" %in% names(final$opening_hours)){
                                 open_now <- ifelse(is.na(final$opening_hours$open_now), "No information",
