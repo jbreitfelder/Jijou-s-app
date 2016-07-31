@@ -49,4 +49,5 @@ Juan, **Brazil**
 - **ui.R** and **server.R**: the source codes of the shiny application
 - **www** directory: contains images used in the shiny app
 - **logos**: an image used in the documentation files
+- **rsconnect** directory: created after deploying the application on *shinyapps.io*
 
