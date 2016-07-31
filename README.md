@@ -15,7 +15,7 @@ This application is based on [RStudio's Shiny](http://shiny.rstudio.com) and [Go
 
 #### How to run the ui.R and server.R codes :
 
-First copy them to a directory (ex: "siny_app") inside your working space. Then, on R studio's console :
+First copy them to a directory (ex: "shiny_app") inside your working space. Then, on R studio's console :
 
 ```r
 library(shiny)
