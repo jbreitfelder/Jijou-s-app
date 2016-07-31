@@ -55,29 +55,51 @@ close_places <- function(location, radius, place){
         final <- fromJSON(newurl, simplifyVector=TRUE)
         final <- final$results
         
-        if("opening_hours" %in% names(final)){
-                if("open_now" %in% names(final$opening_hours)){
-                        open_now <- ifelse(is.na(final$opening_hours$open_now), "No information",
-                                         ifelse(final$opening_hours$open_now==FALSE,
-                                                "Closed :(", "Open :)"))
-                }
+        if(is.null(final$results)){
+                details <- data.frame(icon="No result, try a bigger radius",
+                                      rating=0,
+                                      address="No result, try a bigger radius",
+                                      open_now="No result, try a bigger radius",
+                                      name="No result, try a bigger radius",
+                                      idx=1,
+                                      lat=geoCode(location)[1],
+                                      long=geoCode(location)[2])
         } else {
-                open_now <- rep("No information", length(final$name))
+        
+                if("opening_hours" %in% names(final)){
+                        if("open_now" %in% names(final$opening_hours)){
+                                open_now <- ifelse(is.na(final$opening_hours$open_now), "No information",
+                                                 ifelse(final$opening_hours$open_now==FALSE,
+                                                        "Closed :(", "Open :)"))
+                        }
+                } else {
+                        open_now <- rep("No information", length(final$name))
+                }
+                
+                if("rating" %in% names(final)){
+                        rating <- ifelse(is.na(final$rating), 
+                                         mean(final$rating, na.rm=TRUE),
+                                         final$rating)
+                } else {
+                        rating <- rep(5, length(final$name))
+                }
+                
+                if("icon" %in% names(final)){
+                        icon <- paste("<img src='", final$icon, 
+                                      "' width='50'></img>", sep="")
+                } else {
+                        icon <- rep("No information", length(final$name))
+                }
+                
+                details <- data.frame(icon=icon,
+                                      rating=rating,
+                                      address=final$vicinity,
+                                      open_now=open_now,
+                                      name=final$name,
+                                      idx=1:length(final$geometry$location$lat),
+                                      lat=final$geometry$location$lat,
+                                      long=final$geometry$location$lng)
         }
-        
-        rating <- ifelse(is.na(final$rating), mean(final$rating, na.rm=TRUE),
-                         final$rating)
-        
-        icon <- paste("<img src='", final$icon, "' width='50'></img>", sep="")
-        
-        details <- data.frame(icon=icon,
-                              rating=rating,
-                              address=final$vicinity,
-                              open_now=open_now,
-                              name=final$name,
-                              idx=1:length(final$geometry$location$lat),
-                              lat=final$geometry$location$lat,
-                              long=final$geometry$location$lng)
         
         return(details)
 }
