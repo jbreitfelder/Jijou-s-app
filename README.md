@@ -10,7 +10,7 @@ This application is based on [RStudio's Shiny](http://shiny.rstudio.com) and [Go
 
 #### Links 
 
-* To access the app: <https://jijou.shinyapps.io/my_shiny_app/>
+* To access the app: <https://jijou.shinyapps.io/Jijou-s-app/>
 * Github repository: <https://github.com/jbreitfelder/Jijou-s-app>
 
 #### How to run the ui.R and server.R codes :
